@@ -295,17 +295,25 @@ io.on('connection', (socket) => {
     });
 });
 
-// Serve static assets in production
-if (process.env.NODE_ENV === 'production') {
-    app.use(express.static(path.join(__dirname, '../client/dist')));
+// ─── FRONTEND SERVING ────────────────────────────────────────────────
+// In a monolith deployment (backend + frontend on same service), serve the client.
+// When deployed separately (Vercel client + Render backend), the backend is API-only.
+const fs = require('fs');
+const clientDistPath = path.join(__dirname, '../client/dist');
+const isMonolithDeployment = fs.existsSync(clientDistPath);
 
+if (isMonolithDeployment) {
+    // Monolith: serve the built client
+    app.use(express.static(clientDistPath));
     app.get('*', (req, res) => {
         if (!req.path.startsWith('/api') && !req.path.startsWith('/auth')) {
-            res.sendFile(path.resolve(__dirname, '../client', 'dist', 'index.html'));
+            res.sendFile(path.resolve(clientDistPath, 'index.html'));
         }
     });
 } else {
-    app.get('/', (req, res) => res.send('Whiteboard Server is Running'));
+    // Separate deployment (Render API + Vercel client): health check only
+    app.get('/', (req, res) => res.status(200).json({ message: 'Whiteboard Server is Running' }));
+    app.get('/health', (req, res) => res.status(200).json({ ok: true }));
 }
 
 server.listen(PORT, () => console.log(`Server running on port ${PORT}`));

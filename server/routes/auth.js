@@ -7,30 +7,42 @@ router.get('/google', passport.authenticate('google', { scope: ['profile', 'emai
 
 router.get('/google/callback',
     (req, res, next) => {
-        // Dynamically determine frontend URL.  Prefer explicit env var so we can redirect
-        // correctly when the backend is deployed separately (Render) and the client is
-        // hosted on Vercel or another domain.
+        // Determine frontend URL for redirect after login.
+        // FRONTEND_URL must be set in production (e.g., via Render environment variable).
+        // For local dev, fallback to dynamic port swap.
         const frontendUrl = process.env.FRONTEND_URL || (() => {
-            const host = req.get('host'); // e.g., 'localhost:5000' or '127.0.0.1:5000'
-            return host ? `http://${host.replace(':5000', ':5173')}` : 'http://localhost:5173';
+            const host = req.get('host');
+            if (!host) return 'http://localhost:5173';
+            // Local dev: if backend is localhost:5000, frontend is localhost:5173
+            return host.includes('localhost') 
+                ? `http://${host.replace(':5000', ':5173')}`
+                : `http://${host}`; // fallback (shouldn't happen in prod)
         })();
+
+        console.log('[Auth] Google callback triggered, will redirect to:', frontendUrl);
 
         passport.authenticate('google', (err, user, info) => {
             if (err) {
-                console.error('Passport Auth Error:', err);
+                console.error('[Auth] Passport Error:', err);
                 return res.redirect(`${frontendUrl}/login?error=auth_failed`);
             }
             if (!user) {
-                console.warn('Passport Auth Failure:', info);
+                console.warn('[Auth] Passport returned no user:', info);
                 return res.redirect(`${frontendUrl}/login?error=no_user`);
             }
             req.logIn(user, (err) => {
                 if (err) {
-                    console.error('Session Login Error:', err);
+                    console.error('[Auth] Session Login Error:', err);
                     return res.redirect(`${frontendUrl}/login?error=session_error`);
                 }
-                console.log('User authenticated successfully:', user.username);
-                return res.redirect(`${frontendUrl}/`);
+                console.log('[Auth] User authenticated & session created:', user.username);
+                // CRITICAL: save session before redirecting
+                req.session.save((saveErr) => {
+                    if (saveErr) {
+                        console.error('[Auth] Session save error:', saveErr);
+                    }
+                    return res.redirect(`${frontendUrl}/`);
+                });
             });
         })(req, res, next);
     }
