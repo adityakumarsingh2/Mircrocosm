@@ -10,8 +10,8 @@ export const AuthProvider = ({ children }) => {
     useEffect(() => {
         const fetchUser = async () => {
             try {
-                const host = window.location.hostname;
-                const res = await axios.get(`http://${host}:5000/auth/current_user`, { withCredentials: true });
+                const backendUrl = import.meta.env.VITE_BACKEND_URL || `http://${window.location.hostname}:5000`;
+                const res = await axios.get(`${backendUrl}/auth/current_user`, { withCredentials: true });
                 if (res.data && res.data.user) {
                     setUser(res.data.user);
                 } else {
@@ -33,8 +33,8 @@ export const AuthProvider = ({ children }) => {
 
     const logout = async () => {
         try {
-            const host = window.location.hostname;
-            await axios.get(`http://${host}:5000/auth/logout`, { withCredentials: true });
+            const backendUrl = import.meta.env.VITE_BACKEND_URL || `http://${window.location.hostname}:5000`;
+            await axios.get(`${backendUrl}/auth/logout`, { withCredentials: true });
         } catch (err) {
             console.error('Logout API failed:', err);
         } finally {

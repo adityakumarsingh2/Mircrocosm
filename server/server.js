@@ -19,8 +19,8 @@ app.set('trust proxy', 1);
 const allowedOrigins = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
-    process.env.FRONTEND_URL // Allow dynamically set production URL
-];
+    process.env.FRONTEND_URL
+].filter(Boolean);
 
 const io = new Server(server, {
     cors: {
@@ -46,7 +46,13 @@ app.use(session({
     resave: false,
     saveUninitialized: false,
     name: 'collabpaint.sid',
-    cookie: { maxAge: 24 * 60 * 60 * 1000, secure: false, sameSite: 'lax', httpOnly: true }
+    proxy: true, // Required for secure cookies behind proxy (Render/Vercel)
+    cookie: {
+        maxAge: 24 * 60 * 60 * 1000,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+        httpOnly: true
+    }
 }));
 app.use(passport.initialize());
 app.use(passport.session());

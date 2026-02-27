@@ -14,7 +14,8 @@ const Login = () => {
     const navigate = useNavigate();
 
     const handleGoogleLogin = () => {
-        window.location.href = `http://${window.location.hostname}:5000/auth/google`;
+        const backendUrl = import.meta.env.VITE_BACKEND_URL || `http://${window.location.hostname}:5000`;
+        window.location.href = `${backendUrl}/auth/google`;
     };
 
     if (user) { navigate('/dashboard'); return null; }

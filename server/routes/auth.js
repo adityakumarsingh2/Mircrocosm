@@ -7,9 +7,13 @@ router.get('/google', passport.authenticate('google', { scope: ['profile', 'emai
 
 router.get('/google/callback',
     (req, res, next) => {
-        // Dynamically determine frontend URL based on request host
-        const host = req.get('host'); // e.g., 'localhost:5000' or '127.0.0.1:5000'
-        const frontendUrl = host ? `http://${host.replace(':5000', ':5173')}` : 'http://localhost:5173';
+        // Dynamically determine frontend URL.  Prefer explicit env var so we can redirect
+        // correctly when the backend is deployed separately (Render) and the client is
+        // hosted on Vercel or another domain.
+        const frontendUrl = process.env.FRONTEND_URL || (() => {
+            const host = req.get('host'); // e.g., 'localhost:5000' or '127.0.0.1:5000'
+            return host ? `http://${host.replace(':5000', ':5173')}` : 'http://localhost:5173';
+        })();
 
         passport.authenticate('google', (err, user, info) => {
             if (err) {

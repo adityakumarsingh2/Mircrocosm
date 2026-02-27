@@ -53,9 +53,8 @@ const Whiteboard = () => {
     // ref for use inside socket callbacks
     const socketRef = useRef(null);
 
-    // ─── Socket ─────────────────────────────────────────────────────────────
     useEffect(() => {
-        const socketUrl = window.location.hostname === 'localhost' ? `http://localhost:5000` : window.location.origin;
+        const socketUrl = import.meta.env.VITE_BACKEND_URL || `http://localhost:5000`;
         const newSocket = io(socketUrl, {
             withCredentials: true,
             transports: ['websocket', 'polling'],

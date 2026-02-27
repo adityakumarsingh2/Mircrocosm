@@ -31,7 +31,8 @@ const Home = () => {
 
     useEffect(() => {
         if (!user) return;
-        axios.get(`http://${window.location.hostname}:5000/api/rooms`, { withCredentials: true })
+        const backendUrl = import.meta.env.VITE_BACKEND_URL || `http://${window.location.hostname}:5000`;
+        axios.get(`${backendUrl}/api/rooms`, { withCredentials: true })
             .then(r => setRooms(r.data))
             .catch(err => console.error('Error fetching rooms:', err))
             .finally(() => setFetching(false));
